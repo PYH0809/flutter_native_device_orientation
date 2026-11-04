@@ -21,6 +21,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 import android.util.Log;
 import android.view.OrientationListener;
 
@@ -40,6 +41,8 @@ public abstract class OrientationEventListener {
     private SensorEventListener mSensorEventListener;
     private OrientationListener mOldListener;
     private double mTanAngle2;
+    // PiliPlus: the thread the sensor's events arrive on, off the main one.
+    private final Handler mHandler;
 
     /**
      * Returned from onOrientationChanged when the device orientation cannot be determined
@@ -67,7 +70,9 @@ public abstract class OrientationEventListener {
      *                value of {@link SensorManager#SENSOR_DELAY_NORMAL
      *                SENSOR_DELAY_NORMAL} for simple screen orientation change detection.
      */
-    public OrientationEventListener(Context context, int rate, int angleDegrees) {
+    // PiliPlus: takes the handler the sensor's events arrive on.
+    public OrientationEventListener(Context context, int rate, int angleDegrees, Handler handler) {
+        mHandler = handler;
         mSensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         mRate = rate;
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -95,7 +100,8 @@ public abstract class OrientationEventListener {
         }
         if (mEnabled == false) {
             if (localLOGV) Log.d(TAG, "OrientationEventListener enabled");
-            mSensorManager.registerListener(mSensorEventListener, mSensor, mRate);
+            // PiliPlus: on mHandler's thread, as the caller is.
+            mSensorManager.registerListener(mSensorEventListener, mSensor, mRate, mHandler);
             mEnabled = true;
         }
     }

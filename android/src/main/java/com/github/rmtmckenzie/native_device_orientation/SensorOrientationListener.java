@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -20,11 +21,14 @@ public class SensorOrientationListener implements IOrientationListener {
     private NativeOrientation lastOrientation = null;
     private int angleOffset = 0;
     private final int angleDegrees;
+    // PiliPlus: the thread it is made, started and stopped on, and hears the sensor on.
+    private final Handler handler;
 
-    public SensorOrientationListener(Activity activity, OrientationCallback callback, int angleDegrees) {
+    public SensorOrientationListener(Activity activity, OrientationCallback callback, int angleDegrees, Handler handler) {
         this.activity = activity;
         this.callback = callback;
         this.angleDegrees = angleDegrees;
+        this.handler = handler;
         checkOrientation();
     }
 
@@ -35,7 +39,7 @@ public class SensorOrientationListener implements IOrientationListener {
             return;
         }
 
-        orientationEventListener = new OrientationEventListener(activity, SensorManager.SENSOR_DELAY_NORMAL, angleDegrees) {
+        orientationEventListener = new OrientationEventListener(activity, SensorManager.SENSOR_DELAY_NORMAL, angleDegrees, handler) {
             @Override
             public void onOrientationChanged(int angle) {
                 NativeOrientation newOrientation = calculateSensorOrientation(angle);
